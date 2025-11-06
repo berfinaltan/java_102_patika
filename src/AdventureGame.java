@@ -1,11 +1,67 @@
 import javax.swing.*;
 import java.util.Scanner;
+import java.util.Random;
 
 class Game{
     private Player player;
     private Location location;
 
     public void start(){
+        Scanner input = new Scanner(System.in);
+
+        System.out.println("Enter your name: ");
+        String playerName = input.nextLine();
+        player = new Player(playerName);
+
+        System.out.println("Welcome, " + playerName);
+        Location location = null;
+
+        while(true){
+            System.out.println("----Locations----");
+            System.out.println("1-Safe House");
+            System.out.println("2-Tool Store");
+            System.out.println("3-Cave");
+            System.out.println("4-Forest");
+            System.out.println("5-River");
+            System.out.println("6-Mine");
+            System.out.println("0-Exit Game");
+            System.out.println("Select a location");
+
+            int selectLoc = input.nextInt();
+
+            switch (selectLoc){
+                case 0:
+                    System.out.println("You exited the game.");
+                    return;
+                case 1:
+                    location = new SafeHouse(player);
+                    break;
+                case 2:
+                    location = new Toolstore(player);
+                    break;
+                case 3:
+                    location = new Cave(player);
+                    break;
+                case 4:
+                    location = new Forest(player);
+                    break;
+                case 5:
+                    location = new River(player);
+                    break;
+                case 6:
+                    location = new Mine(player);
+                    break;
+                default:
+                    System.out.println("Invalid selection");
+                    continue;
+
+            }
+            if(!location.onLocation()){
+                System.out.println("Game Over :(");
+                break;
+            }
+
+        }
         System.out.println("Starting game");
     }
     public Player getPlayer(){
@@ -22,12 +78,16 @@ class Player{
     private int money;
     private String name;
 
+
     public Player(String name){
         this.name = name;
         this.damage = 5;
         this.health = 100;
         this.money = 20;
         this.inventory = new Inventory();
+    }
+    public boolean isFirstAttack(){
+        return Math.random() < 0.5;
     }
 
     public void selectChar(){
@@ -175,43 +235,96 @@ abstract class BattleLoc extends Location{
     }
 }
 class River extends BattleLoc{
+    private int monsterCount;
+    private boolean rewardGiven = false;
+
     public River(Player player){
         super(player,"River",new Bear());
+        this.monsterCount = (int)(Math.random() * 3) + 1;
     }
 
     @Override
-    public boolean onLocation(){
+    public boolean onLocation() {
         System.out.println("You are at the river");
+        System.out.println("You are at the river" + monsterCount + "bears are nearby");
+
+
+        for (int i = monsterCount; i > 0; i--) {
+            System.out.println("BEARS" + i);
+            combat();
+            System.out.println("Congrats!! Bears defeated");
+        }
+        System.out.println("All bears are defeated");
+        System.out.println("You are earned the reward: Water");
+        player.getInventory().setWater(true);
+
         return true;
     }
+
     @Override
     public void combat() {
         System.out.println("Combat with a Bear");
     }
 }
 class Cave extends BattleLoc{
+    private int monsterCount;
+    private boolean rewardGiven = false;
     public Cave(Player player){
         super(player,"Cave",new Zombie());
     }
 
     @Override
     public boolean onLocation(){
-        System.out.println("You are at the cave");
+        if (rewardGiven) {
+            System.out.println("You are already cleared this cave and got the reward.");
+            return true;
+        }
+        System.out.println("You entered the Cave. " + monsterCount +" zombies are here!!");
+         for (int i = monsterCount; i > 0 ; i--){
+             System.out.println("ZOMBIES" + i );
+             combat();
+             System.out.println("Zombie defeated;");
+         }
+
+        System.out.println("Congrats!! All zombies are defeated");
+        System.out.println("You earned the reward: FOOD");
+        player.getInventory().setFood(true);
+        rewardGiven = true;
+
+        System.out.println("You are at the cave!");
         return true;
     }
     @Override
     public void combat() {
         System.out.println("Combat with a Zombie");
     }
+
 }
 class Forest extends BattleLoc{
+    private int monsterCount;
+    private boolean rewardGiven = false;
     public Forest(Player player){
         super(player,"Forest",new Vampire());
+        this.monsterCount = (int)(Math.random() * 3) + 1;
     }
     @Override
     public boolean onLocation(){
-        System.out.println("You are at the forest");
-        return false;
+        if(rewardGiven){
+            System.out.println("You already cleared the this forest and got the reward");
+            return true;
+        }
+
+        System.out.println("You are at the forest" + monsterCount + "vampires are here");
+        for (int i = monsterCount; i > 0; i--){
+            System.out.println("VAMPIRES" + i);
+            combat();
+            System.out.println("Congrats! Vampires defeated!!");
+        }
+        System.out.println("All vampires are defeated!");
+        System.out.println("You are earned the reward: FireWood");
+        player.getInventory().setFirewood(true);
+        rewardGiven = true;
+        return true;
     }
     @Override
     public void combat() {
@@ -253,6 +366,13 @@ public boolean onLocation(){
 
 
     player.setHealth(100);
+
+    Inventory inv = player.getInventory();
+    if(inv.hasWater() && inv.hasFood() && inv.hasFireWood()){
+        System.out.println("Congratulations! You collected all the item!");
+        System.out.println("You returned safely home and won the game");
+        return false;
+    }
     return true;
 }
 }
